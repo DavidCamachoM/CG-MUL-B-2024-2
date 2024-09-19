@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecciones de un Cubo</title>
+    <style>
+        canvas { border: 1px solid black; }
+        button { margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Proyecciones de un Cubo</h1>
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <div>
+        <button onclick="cubo.proyeccion('perspectiva')">Perspectiva</button>
+        <button onclick="cubo.proyeccion('ortografica')">Ortográfica</button>
+        <button onclick="cubo.proyeccion('isometrica')">Isométrica</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
