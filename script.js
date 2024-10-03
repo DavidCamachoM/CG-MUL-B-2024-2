@@ -27,7 +27,7 @@ scene.add(cone);
 
 // Cargar textura para el cubo
 const textureLoader = new THREE.TextureLoader();
-textureLoader.load('textures/mi-textura.jpg', function(texture) {
+textureLoader.load('mi-textura.jpg', function(texture) {
     const materialTextured = new THREE.MeshBasicMaterial({ map: texture });
     const texturedCube = new THREE.Mesh(geometryCube, materialTextured);
     scene.add(texturedCube);
