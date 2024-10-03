@@ -15,86 +15,95 @@ class Linea {
 }
 
 class Cuadrado {
-    constructor(x, y, size) {
+    constructor(x, y, lado) {
         this.x = x;
         this.y = y;
-        this.size = size;
+        this.lado = lado;
     }
 
-    dibujar(ctx, proyeccion) {
-        const vertices = this.obtenerVertices(proyeccion);
-        for (let i = 0; i < vertices.length; i++) {
-            const nextIndex = (i + 1) % vertices.length;
-            new Linea(vertices[i][0], vertices[i][1], vertices[nextIndex][0], vertices[nextIndex][1]).dibujar(ctx);
-        }
-    }
-
-    obtenerVertices(proyeccion) {
-        switch (proyeccion) {
-            case 'perspectiva':
-                const d = 2; // Profundidad de la proyección
-                return [
-                    [this.x, this.y], // Inferior izquierda
-                    [this.x + this.size, this.y], // Inferior derecha
-                    [this.x + this.size * 0.8, this.y - this.size / d], // Superior derecha
-                    [this.x + 0.2 * this.size, this.y - this.size / d] // Superior izquierda
-                ];
-            case 'ortografica':
-                return [
-                    [this.x, this.y],
-                    [this.x + this.size, this.y],
-                    [this.x + this.size, this.y - this.size],
-                    [this.x, this.y - this.size]
-                ];
-            case 'isometrica':
-                return [
-                    [this.x, this.y],
-                    [this.x + this.size, this.y],
-                    [this.x + this.size * 0.5, this.y - this.size * 0.5],
-                    [this.x - this.size * 0.5, this.y - this.size * 0.5]
-                ];
-            default:
-                return [];
-        }
+    dibujar(ctx) {
+        ctx.strokeRect(this.x, this.y, this.lado, this.lado);
     }
 }
 
 class Cubo {
-    constructor(x, y, size) {
-        this.x = x;
-        this.y = y;
+    constructor(size) {
         this.size = size;
+        this.vertices = this.calcularVertices();
     }
 
-    proyeccion(tipo) {
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.dibujarCubo(ctx, tipo);
-    }
-
-    dibujarCubo(ctx, tipo) {
-        // Dibujar la cara frontal
-        new Cuadrado(this.x, this.y, this.size).dibujar(ctx, tipo);
-        
-        // Dibujar la cara trasera
-        const offset = this.size * 0.5; // Desplazamiento para perspectiva
-        new Cuadrado(this.x + offset, this.y - offset, this.size).dibujar(ctx, tipo);
-        
-        // Dibujar las aristas
-        const edges = [
-            [this.x, this.y, this.x + offset, this.y - offset], // Inferior izquierda a superior derecha
-            [this.x + this.size, this.y, this.x + this.size + offset, this.y - offset], // Inferior derecha a superior derecha
-            [this.x, this.y - this.size, this.x + offset, this.y - this.size - offset], // Superior izquierda a superior derecha
-            [this.x + this.size, this.y - this.size, this.x + this.size + offset, this.y - this.size - offset] // Superior derecha a superior derecha
+    calcularVertices() {
+        const s = this.size / 2;
+        return [
+            [-s, -s, -s], [s, -s, -s], [s, s, -s], [-s, s, -s],  // Frente
+            [-s, -s, s], [s, -s, s], [s, s, s], [-s, s, s]       // Detrás
         ];
+    }
 
-        edges.forEach(edge => {
-            new Linea(edge[0], edge[1], edge[2], edge[3]).dibujar(ctx);
+    // Proyección Perspectiva
+    dibujar_perspectiva(ctx, distancia) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const verticesPerspectiva = this.vertices.map(([x, y, z]) => {
+            const factor = distancia / (distancia + z);
+            return [
+                x * factor + ctx.canvas.width / 2,
+                y * factor + ctx.canvas.height / 2
+            ];
+        });
+        this.dibujarAristas(ctx, verticesPerspectiva);
+    }
+
+    // Proyección Ortográfica
+    dibujar_ortografica(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const verticesOrtograficas = this.vertices.map(([x, y]) => [
+            x + ctx.canvas.width / 2,
+            y + ctx.canvas.height / 2
+        ]);
+        this.dibujarAristas(ctx, verticesOrtograficas);
+    }
+
+    // Proyección Isométrica
+    dibujar_isometrica(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const angulo = Math.PI / 6;  // 30 grados en radianes
+        const verticesIsometricos = this.vertices.map(([x, y, z]) => [
+            (x - z) * Math.cos(angulo) + ctx.canvas.width / 2,
+            (x + z) * Math.sin(angulo) - y + ctx.canvas.height / 2
+        ]);
+        this.dibujarAristas(ctx, verticesIsometricos);
+    }
+
+    // Método para dibujar las aristas del cubo
+    dibujarAristas(ctx, vertices) {
+        const aristas = [
+            [0, 1], [1, 2], [2, 3], [3, 0], // Frente
+            [4, 5], [5, 6], [6, 7], [7, 4], // Atrás
+            [0, 4], [1, 5], [2, 6], [3, 7]  // Conexiones entre frente y atrás
+        ];
+        aristas.forEach(([i, j]) => {
+            const [x1, y1] = vertices[i];
+            const [x2, y2] = vertices[j];
+            const linea = new Linea(x1, y1, x2, y2);
+            linea.dibujar(ctx);
         });
     }
 }
 
-// Crear el cubo y dibujar la proyección inicial
-const cubo = new Cubo(200, 200, 50);
-cubo.proyeccion('perspectiva');
+// Configuración inicial
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const cubo = new Cubo(100);
+
+// Botones para cambiar la proyección
+document.getElementById('btn-perspectiva').addEventListener('click', () => {
+    cubo.dibujar_perspectiva(ctx, 300);
+});
+
+document.getElementById('btn-ortografica').addEventListener('click', () => {
+    cubo.dibujar_ortografica(ctx);
+});
+
+document.getElementById('btn-isometrica').addEventListener('click', () => {
+    cubo.dibujar_isometrica(ctx);
+});

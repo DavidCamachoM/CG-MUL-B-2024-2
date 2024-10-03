@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecciones del Cubo</title>
+    <style>
+        body {
+            background-color: #121212; /* Fondo oscuro */
+            color: #ffffff; /* Texto blanco */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 1px solid #00ffcc; /* Borde neón */
+            background-color: #1e1e1e; /* Fondo del canvas */
+        }
+        button {
+            background-color: #00ffcc; /* Color de fondo neón */
+            border: none;
+            color: #121212; /* Color de texto oscuro */
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 5px; /* Bordes redondeados */
+        }
+        button:hover {
+            background-color: #00b3a3; /* Color de fondo al pasar el mouse */
+        }
+    </style>
+</head>
+<body>
+    <h1>Proyecciones de un Cubo</h1>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <div>
+        <button id="btnPerspectiva">Perspectiva</button>
+        <button id="btnOrtografica">Ortográfica</button>
+        <button id="btnIsometrica">Isométrica</button>
+    </div>
+
+    <script>
+        class Linea {
+            constructor(x1, y1, x2, y2, color) {
+                this.x1 = x1;
+                this.y1 = y1;
+                this.x2 = x2;
+                this.y2 = y2;
+                this.color = color;
+            }
+
+            dibujar(ctx) {
+                ctx.beginPath();
+                ctx.moveTo(this.x1, this.y1);
+                ctx.lineTo(this.x2, this.y2);
+                ctx.strokeStyle = this.color; // Color de la línea
+                ctx.stroke();
+            }
+        }
+
+        class Cubo {
+            constructor() {
+                this.vertices = [
+                    [-50, -50, -50], [50, -50, -50],
+                    [50, 50, -50], [-50, 50, -50],
+                    [-50, -50, 50], [50, -50, 50],
+                    [50, 50, 50], [-50, 50, 50]
+                ];
+
+                this.aristas = [
+                    [0, 1], [1, 2], [2, 3], [3, 0], // Parte trasera
+                    [4, 5], [5, 6], [6, 7], [7, 4], // Parte delantera
+                    [0, 4], [1, 5], [2, 6], [3, 7]  // Conexiones entre la parte delantera y trasera
+                ];
+            }
+
+            dibujarAristas(ctx, verticesProyectados, color) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Limpiar el canvas
+                this.aristas.forEach(([i, j]) => {
+                    const [x1, y1] = verticesProyectados[i];
+                    const [x2, y2] = verticesProyectados[j];
+                    const linea = new Linea(x1, y1, x2, y2, color);
+                    linea.dibujar(ctx);
+                });
+            }
+
+            dibujar_perspectiva(ctx, distancia) {
+                const verticesPerspectiva = this.vertices.map(([x, y, z]) => {
+                    const factor = distancia / (distancia + z);
+                    return [
+                        x * factor + ctx.canvas.width / 2,
+                        y * factor + ctx.canvas.height / 2
+                    ];
+                });
+                this.dibujarAristas(ctx, verticesPerspectiva, '#00ffcc');
+            }
+
+            dibujar_ortografica(ctx) {
+                const verticesOrtograficas = this.vertices.map(([x, y]) => [
+                    x + ctx.canvas.width / 2,
+                    y + ctx.canvas.height / 2
+                ]);
+                this.dibujarAristas(ctx, verticesOrtograficas, '#ff00ff');
+            }
+
+            dibujar_isometrica(ctx) {
+                const angulo = Math.PI / 6;  // 30 grados en radianes
+                const verticesIsometricos = this.vertices.map(([x, y, z]) => [
+                    (x - z) * Math.cos(angulo) + ctx.canvas.width / 2,
+                    (x + z) * Math.sin(angulo) - y + ctx.canvas.height / 2
+                ]);
+                this.dibujarAristas(ctx, verticesIsometricos, '#ffff00');
+            }
+        }
+
+        // Configuración inicial
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const cubo = new Cubo();
+
+        // Botones para cambiar proyección
+        document.getElementById('btnPerspectiva').addEventListener('click', () => {
+            cubo.dibujar_perspectiva(ctx, 300);
+        });
+
+        document.getElementById('btnOrtografica').addEventListener('click', () => {
+            cubo.dibujar_ortografica(ctx);
+        });
+
+        document.getElementById('btnIsometrica').addEventListener('click', () => {
+            cubo.dibujar_isometrica(ctx);
+        });
+
+        // Dibujar inicialmente en perspectiva
+        cubo.dibujar_perspectiva(ctx, 300);
+    </script>
+</body>
+</html>
